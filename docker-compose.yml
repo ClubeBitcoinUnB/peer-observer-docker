@@ -1,0 +1,96 @@
+volumes:
+  bitcoin-data:
+  bitcoin-bin:
+
+services:
+  bitcoin-node:
+    image: bitcoin-node
+    build:
+      context: .
+      dockerfile: docker/bitcoin-node.dockerfile
+    ports:
+      - "8332:8332"
+      - "8333:8333"
+    cap_add:
+      - SYS_ADMIN
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    privileged: true
+    volumes:
+      - bitcoin-data:/home/bitcoin/.bitcoin
+      - bitcoin-bin:/shared
+      - /sys/kernel/debug:/sys/kernel/debug
+    depends_on:
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/peer-observer/scripts/bitcoin-node-healthcheck.sh"]
+      interval: 1m
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  nats:
+    image: nats:2
+    build:
+      context: .
+      dockerfile: docker/nats.dockerfile
+    ports:
+      - "4222:4222"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+      interval: 1m
+      timeout: 1s
+      retries: 3
+      start_period: 1s
+
+  peer-logger:
+    image: peer-observer-tools
+    build:
+      context: .
+      dockerfile: docker/peer-observer-tools.dockerfile
+    command:
+      ["/home/appuser/logger", "--nats-address", "nats://nats:4222"]
+    depends_on:
+      nats:
+        condition: service_healthy
+
+  peer-metrics:
+    image: peer-observer-tools
+    build:
+      context: .
+      dockerfile: docker/peer-observer-tools.dockerfile
+    command:
+      ["/home/appuser/metrics", "--nats-address", "nats://nats:4222", "--metrics-address", "0.0.0.0:8282"]
+    ports:
+      - "8282:8282"
+    depends_on:
+      nats:
+        condition: service_healthy
+
+  peer-websocket:
+    image: peer-observer-tools
+    build:
+      context: .
+      dockerfile: docker/peer-observer-tools.dockerfile
+    command:
+      ["/home/appuser/websocket", "--nats-address", "nats://nats:4222", "--websocket-address", "0.0.0.0:47482"]
+    ports:
+      - "47482:47482"
+    depends_on:
+      nats:
+        condition: service_healthy
+
+  peer-connectivity-check:
+    image: peer-observer-tools
+    build:
+      context: .
+      dockerfile: docker/peer-observer-tools.dockerfile
+    command:
+      ["/home/appuser/connectivity-check", "--nats-address", "nats://nats:4222", "--metrics-address", "0.0.0.0:18282"]
+    ports:
+      - "18282:18282"
+    depends_on:
+      nats:
+        condition: service_healthy
