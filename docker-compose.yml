@@ -1,6 +1,7 @@
 volumes:
   bitcoin-data:
   bitcoin-bin:
+  nats-data:
 
 services:
   bitcoin-node:
@@ -38,6 +39,8 @@ services:
       dockerfile: docker/nats.dockerfile
     ports:
       - "4222:4222"
+    volumes:
+      - nats-data:/data
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
       interval: 1m
