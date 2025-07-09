@@ -91,7 +91,7 @@ RUN useradd -m -s /bin/bash bitcoin \
 COPY --from=builder /peer-observer/scripts/bitcoin-node-entrypoint.sh /peer-observer/scripts/bitcoin-node-entrypoint.sh
 COPY --from=builder /peer-observer/scripts/bitcoin-node-healthcheck.sh /peer-observer/scripts/bitcoin-node-healthcheck.sh
 COPY --from=builder /bitcoin/build/bin/ /shared/
-COPY --from=builder /peer-observer/target/release/extractor /usr/local/bin/extractor
+COPY --from=builder /peer-observer/target/release/ebpf-extractor /usr/local/bin/ebpf-extractor
 
 # Expose Bitcoin ports (RPC: 8332, P2P: 8333)
 EXPOSE 8332 8333
