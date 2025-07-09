@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     cmake git
 
 # Create a non-root user and configure sudo
-RUN useradd -m -s /bin/bash appuser 
+RUN useradd -m -s /bin/bash appuser
 
 # Copy the local repository to the container
 RUN git clone https://github.com/0xB10C/peer-observer.git
@@ -16,7 +16,7 @@ USER appuser
 # Install Rust
 RUN rustup default stable
 
-# We build each tool individually to avoid the quircks of the extractor.
+# We build each tool individually to avoid the quircks of the ebpf-extractor.
 WORKDIR /peer-observer
 RUN cargo build --release \
     --bin logger \
