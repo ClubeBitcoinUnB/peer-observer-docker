@@ -3,7 +3,8 @@ FROM rust:1.87.0-slim-bookworm AS builder
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
-    cmake git
+    cmake git \
+    protobuf-compiler
 
 # Create a non-root user and configure sudo
 RUN useradd -m -s /bin/bash appuser
