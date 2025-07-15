@@ -8,6 +8,8 @@ services:
     build:
       context: .
       dockerfile: docker/bitcoin-node.dockerfile
+    environment:
+      BITCOIN_NETWORK: regtest
     ports:
       - "8332:8332"
       - "8333:8333"

@@ -15,18 +15,32 @@ trap cleanup EXIT
 # Fix permissions on the data directory
 chown -R bitcoin:bitcoin /home/bitcoin/.bitcoin 2>/dev/null || true
 
+# Determine network flag
+NETWORK=""
+case "$BITCOIN_NETWORK" in
+  mainnet) NETWORK="" ;;
+  signet)  NETWORK="-signet" ;;
+  testnet) NETWORK="-testnet" ;;
+  regtest|"") NETWORK="-regtest" ;; # regtest is the default
+  *)
+    echo "Unknown BITCOIN_NETWORK: $BITCOIN_NETWORK"
+    exit 1
+    ;;
+esac
+
 # Start bitcoind as bitcoin user, in the background
-/usr/sbin/runuser -u bitcoin -- /shared/bitcoind -regtest &
+echo "Launching Bitcoin node in $BITCOIN_NETWORK mode..."
+/usr/sbin/runuser -u bitcoin -- /shared/bitcoind $NETWORK &
 BITCOIND_PID=$!
 
 # Now wait for the RPC
 for i in {1..30}; do
-    /usr/sbin/runuser -u bitcoin -- /shared/bitcoin-cli -regtest getblockchaininfo >/dev/null 2>&1 && break
+    /usr/sbin/runuser -u bitcoin -- /shared/bitcoin-cli $NETWORK getblockchaininfo >/dev/null 2>&1 && break
     sleep 1
 done
 
 # Final check
-if ! /usr/sbin/runuser -u bitcoin -- /shared/bitcoin-cli -regtest getblockchaininfo >/dev/null 2>&1; then
+if ! /usr/sbin/runuser -u bitcoin -- /shared/bitcoin-cli $NETWORK getblockchaininfo >/dev/null 2>&1; then
     echo "Error: bitcoind did not start in time." >&2
     exit 1
 fi
