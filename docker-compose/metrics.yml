@@ -1,0 +1,13 @@
+services:
+  metrics:
+    image: peer-observer-tools
+    build:
+      context: ../
+      dockerfile: docker/peer-observer-tools.dockerfile
+    command:
+      ["/home/appuser/metrics", "--nats-address", "nats://nats:4222", "--metrics-address", "0.0.0.0:8282"]
+    ports:
+      - "8282:8282"
+    depends_on:
+      nats:
+        condition: service_healthy

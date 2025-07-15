@@ -1,0 +1,13 @@
+services:
+  connectivity-check:
+    image: peer-observer-tools
+    build:
+      context: ../
+      dockerfile: docker/peer-observer-tools.dockerfile
+    command:
+      ["/home/appuser/connectivity-check", "--nats-address", "nats://nats:4222", "--metrics-address", "0.0.0.0:18282"]
+    ports:
+      - "18282:18282"
+    depends_on:
+      nats:
+        condition: service_healthy
