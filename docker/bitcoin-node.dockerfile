@@ -6,10 +6,8 @@ ARG BTC_CORE_TAG=v29.0
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
     cmake \
     pkgconf \
-    python3 \
     libevent-dev \
     libboost-dev \
     libsqlite3-dev \
@@ -28,10 +26,7 @@ RUN cmake -B build -DBUILD_GUI=OFF -DWITH_USDT=ON -DCMAKE_BUILD_TYPE=Debug && \
 # Install peer-extractor dependencies
 RUN apt-get update && apt-get install -y \
     sudo git curl protobuf-compiler \
-    libelf-dev clang llvm llvm-14 \
-    zstd binutils-dev elfutils \
-    make pkg-config libbpf-dev \
-    libbpfcc-dev bpfcc-tools \
+    clang elfutils libbpf-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust
@@ -65,7 +60,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
-    libevent-2.1-7 \
     libevent-core-2.1-7 \
     libevent-extra-2.1-7 \
     libevent-pthreads-2.1-7 \
