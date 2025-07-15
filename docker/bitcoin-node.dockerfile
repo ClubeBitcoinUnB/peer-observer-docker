@@ -69,11 +69,7 @@ RUN apt-get update && apt-get install -y \
     libevent-core-2.1-7 \
     libevent-extra-2.1-7 \
     libevent-pthreads-2.1-7 \
-    libboost-system1.74 \
-    libboost-filesystem1.74 \
-    libboost-thread1.74 \
     libsqlite3-0 \
-    libzmq5 \
     libelf1 \
     && rm -rf /var/lib/apt/lists/*
 
