@@ -1,18 +1,9 @@
-volumes:
-  bitcoin-data:
-  bitcoin-bin:
-
 services:
   bitcoin-node:
     image: bitcoin-node
     build:
-      context: .
+      context: ../
       dockerfile: docker/bitcoin-node.dockerfile
-    environment:
-      BITCOIN_NETWORK: regtest
-    ports:
-      - "8332:8332"
-      - "8333:8333"
     cap_add:
       - SYS_ADMIN
       - SYS_PTRACE
@@ -32,17 +23,3 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
-
-  nats:
-    image: nats:2
-    build:
-      context: .
-      dockerfile: docker/nats.dockerfile
-    ports:
-      - "4222:4222"
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
-      interval: 1m
-      timeout: 1s
-      retries: 3
-      start_period: 1s

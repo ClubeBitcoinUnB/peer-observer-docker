@@ -1,0 +1,7 @@
+services:
+  bitcoin-node:
+    environment:
+      BITCOIN_NETWORK: mainnet
+    ports:
+      - "8333:8333"
+      - "8332:8332"
