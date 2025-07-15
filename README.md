@@ -4,29 +4,42 @@ A Docker configuration repository for [peer-observer](https://github.com/0xB10C/
 
 ## Overview
 
-This project contains Docker configurations and orchestration files for running the peer-observer suite, which is a collection of tools for monitoring Bitcoin network peer behavior. The peer-observer project helps analyze Bitcoin node connectivity, peer relationships, and network health metrics.
+This project contains Docker configurations and orchestration files for running the peer-observer suite, which is a collection of tools for monitoring the Bitcoin network. The peer-observer project helps analyze Bitcoin node connectivity, peer relationships, and network health metrics.
 
-**Purpose**: This repository specifically focuses on providing Docker containerization and orchestration configurations for the peer-observer tools, making it easy to deploy and run the monitoring infrastructure without complex manual setup.
+**Purpose**: This repository specifically focuses on providing Docker containerization and orchestration configurations for the peer-observer tools, making it easier to deploy and run the monitoring infrastructure without complex manual setup.
 
 ## Architecture
 
-The system consists of several interconnected services:
+The base system consists of:
 
-- **Bitcoin Node**: A full Bitcoin Core node configured for monitoring
-- **NATS**: Message broker for inter-service communication
-- **Peer Logger**: Logs peer connection events and activities
-- **Peer Metrics**: Exposes monitoring metrics via HTTP endpoint
-- **Peer WebSocket**: Provides real-time data via WebSocket connections
-- **Peer Connectivity Check**: Monitors network connectivity and health
+- **Bitcoin Node**: A full Bitcoin Core node instrumented for monitoring.
+- **ebpf-extractor**: An extractor tool that consumes ebpf kernel events and routes messages to the NATS server.
+- **NATS**: Message broker for inter-service communication.
+
+The default network is regtest for test and development, it is provided by [docker-compose.yml](docker-compose.yml) and doesn't require command line arguments.
+
+Other networks are provided by [node.mainnet.yml](node.mainnet.yml), [node.signet.yml](node.signet.yml), and  [node.regtest.yml](node.regtest.yml). You refer to one of them using the `-f` option, e.g., `docker compose -f node.mainnet.yml up`.
+
+There are currently four tools that consume events from the NATS server:
+
+- **Logger**: Logs peer connection events and activities
+- **Metrics**: Exposes monitoring metrics via HTTP endpoint
+- **WebSocket**: Provides real-time data via WebSocket connections
+- **Connectivity Check**: Monitors network connectivity and health
+
+Refer to [https://github.com/0xB10C/peer-observer](https://github.com/0xB10C/peer-observer) for tooling documentation.
+
+Each tool is configured as a service with the `monitoring` profile and a profile with the tool name. A profile is an opt-in mechanism in docker compose, that is, you only get a service running if you explicitly ask for it. That allows on to start and stop tools in the monitoring pipeline without having to restart the base system (see examples below).
 
 ## Prerequisites
 
-- Docker Engine (20.10 or later)
-- Docker Compose (2.0 or later)
-- At least 8GB RAM (for Bitcoin node)
-- Depending on the network: minimum disk space and internet connection
+- Docker Engine: version 20.10.0 or later
+- Docker Compose CLI Plugin: version 2.20.0 or later (Required for support of profiles: and include: directives in Compose files)
+- Depending on the chosen Bitcoin network:
+  - Disk space: varies (e.g., several hundred GB for mainnet)
+  - Internet connection: required for peer connectivity and block synchronization
 
-## Quick Start
+## Quick Start (regtest)
 
 1. **Clone the repository**:
    ```bash
@@ -34,49 +47,59 @@ The system consists of several interconnected services:
    cd peer-observer-docker
    ```
 
-2. **Build and start all services**:
+2. **Build everything**:
+```bash
+   docker compose --profile monitoring build --no-cache
+```
+
+3. **Start the base system in regtest**:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
-3. **Check service status**:
+4. **Check service status**:
    ```bash
-   docker-compose ps
+   docker compose ps
    ```
 
-4. **View logs**:
+You should see two containers running since the bitcoin node and the ebpf-extractor tool should run in the same container.
+
+5. **Start the logger tool**:
+```bash
+   docker compose --profile logger up -d
+```
+
+You should now have three containers.
+
+6. **View logs**:
    ```bash
-   # All services
-   docker-compose logs -f
-   
-   # Specific service
-   docker-compose logs -f bitcoin-node
+   docker compose --profile logger logs -f   
    ```
 
 ## Services and Ports
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Bitcoin Node | 8332, 8333 | Bitcoin RPC and P2P ports |
-| NATS | 4222 | Message broker |
-| Peer Metrics | 8282 | Metrics HTTP endpoint |
-| Peer WebSocket | 47482 | Real-time data WebSocket |
-| Peer Connectivity Check | 18282 | Connectivity metrics |
+| Service            | Port       | Description               |
+|--------------------|------------|---------------------------|
+| Bitcoin Node       | 8332, 8333 | Bitcoin RPC and P2P ports |
+| NATS               | 4222       | Message broker            |
+| Metrics            | 8282       | Metrics HTTP endpoint     |
+| WebSocket          | 47482      | Real-time data WebSocket  |
+| Connectivity Check | 18282      | Connectivity metrics      |
 
 ## Usage
 
-### Initial Blockchain Sync
+### Initial Block Download
 In mainnet the Bitcoin node will need to sync with the network on first startup. This process can take several hours to days depending on your internet connection and hardware. Monitor the progress with:
 
 ```bash
-docker-compose logs -f bitcoin-node
+docker compose logs -f bitcoin-node
 ```
 
 ### Accessing Metrics
 
 Once all services are running:
 
-- **Peer Metrics**: `http://localhost:8282`
+- **Metrics**: `http://localhost:8282`
 - **Connectivity Metrics**: `http://localhost:18282`
 - **WebSocket Connection**: `ws://localhost:47482`
 
@@ -84,10 +107,10 @@ Once all services are running:
 
 ```bash
 # Stop all services
-docker-compose down
+docker compose --profile monitoring down
 
 # Stop and remove volumes (WARNING: This will delete blockchain data)
-docker-compose down -v
+docker compose --profile monitoring down -v
 ```
 
 ## Configuration
@@ -102,13 +125,13 @@ Bitcoin blockchain data is stored in the `bitcoin-data` Docker volume. This ensu
 
 ```bash
 # Build Bitcoin node
-docker-compose build bitcoin-node
+docker compose build bitcoin-node
 
-# Build peer observer tools
-docker-compose build peer-logger peer-metrics peer-websocket peer-connectivity-check
+# Build a specific peer observer tool (logger)
+docker compose --profile monitoring build logger
 
 # Build NATS
-docker-compose build nats
+docker compose build nats
 ```
 
 ### Debugging
@@ -117,15 +140,15 @@ To access a running container for debugging:
 
 ```bash
 # Access Bitcoin node container
-docker-compose exec bitcoin-node bash
+docker compose exec bitcoin-node bash
 
 # Access peer observer tools container
-docker-compose exec peer-logger bash
+docker compose --profile logger exec logger bash
 ```
 
 ## Health Checks
 
-All services include health checks:
+Some services include health checks:
 
 - **Bitcoin Node**: Checks if the node is responsive
 - **NATS**: Verifies the message broker is healthy
@@ -144,7 +167,7 @@ All services include health checks:
 Check service logs for detailed error information:
 
 ```bash
-docker-compose logs [service-name]
+docker compose logs [service-name]
 ```
 
 ## Contributing
@@ -152,7 +175,7 @@ docker-compose logs [service-name]
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test with `docker-compose up`
+4. Test with `docker compose up`
 5. Submit a pull request
 
 ## License
