@@ -69,11 +69,7 @@ RUN apt-get update && apt-get install -y \
     libevent-core-2.1-7 \
     libevent-extra-2.1-7 \
     libevent-pthreads-2.1-7 \
-    libboost-system1.74 \
-    libboost-filesystem1.74 \
-    libboost-thread1.74 \
     libsqlite3-0 \
-    libzmq5 \
     libelf1 \
     && rm -rf /var/lib/apt/lists/*
 
@@ -91,7 +87,7 @@ RUN useradd -m -s /bin/bash bitcoin \
 COPY --from=builder /peer-observer/scripts/bitcoin-node-entrypoint.sh /peer-observer/scripts/bitcoin-node-entrypoint.sh
 COPY --from=builder /peer-observer/scripts/bitcoin-node-healthcheck.sh /peer-observer/scripts/bitcoin-node-healthcheck.sh
 COPY --from=builder /bitcoin/build/bin/ /shared/
-COPY --from=builder /peer-observer/target/release/extractor /usr/local/bin/extractor
+COPY --from=builder /peer-observer/target/release/ebpf-extractor /usr/local/bin/ebpf-extractor
 
 # Expose Bitcoin ports (RPC: 8332, P2P: 8333)
 EXPOSE 8332 8333
