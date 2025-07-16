@@ -9,3 +9,4 @@ services:
     depends_on:
       nats:
         condition: service_healthy
+    profiles: [monitoring, logger]
