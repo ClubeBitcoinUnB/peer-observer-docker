@@ -11,4 +11,4 @@ services:
     depends_on:
       nats:
         condition: service_healthy
-    profiles: [monitoring, peer-websocket]
+    profiles: [monitoring, websocket]
