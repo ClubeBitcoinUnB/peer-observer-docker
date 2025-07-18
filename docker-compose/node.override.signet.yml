@@ -1,0 +1,7 @@
+services:
+  bitcoin-node:
+    environment:
+      BITCOIN_NETWORK: signet
+    ports:
+      - "38332:38332"
+      - "38333:38333"

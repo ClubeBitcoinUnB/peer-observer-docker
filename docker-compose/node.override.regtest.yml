@@ -1,0 +1,7 @@
+services:
+  bitcoin-node:
+    environment:
+      BITCOIN_NETWORK: regtest
+    ports:
+      - "18444:18444"
+      - "18443:18443"

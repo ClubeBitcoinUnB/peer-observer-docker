@@ -1,0 +1,13 @@
+services:
+  nats:
+    build:
+      context: ../
+      dockerfile: docker/nats.dockerfile
+    ports:
+      - "4222:4222"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
+      interval: 1m
+      timeout: 1s
+      retries: 3
+      start_period: 1s

@@ -1,0 +1,25 @@
+services:
+  bitcoin-node:
+    image: bitcoin-node
+    build:
+      context: ../
+      dockerfile: docker/bitcoin-node.dockerfile
+    cap_add:
+      - SYS_ADMIN
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    privileged: true
+    volumes:
+      - bitcoin-data:/home/bitcoin/.bitcoin
+      - bitcoin-bin:/shared
+      - /sys/kernel/debug:/sys/kernel/debug
+    depends_on:
+      nats:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/peer-observer/scripts/bitcoin-node-healthcheck.sh"]
+      interval: 1m
+      timeout: 3s
+      retries: 3
+      start_period: 5s

@@ -2,12 +2,13 @@ include:
   - path: docker-compose/nats.yml
   - path:
     - docker-compose/node.usdt.yml
-    - docker-compose/node.override.regtest.yml
+    - docker-compose/node.override.signet.yml
   - path: docker-compose/logger.yml
   - path: docker-compose/connectivity-check.yml
   - path: docker-compose/metrics.yml
   - path: docker-compose/websocket.yml
-
+  
 volumes:
   bitcoin-data:
   bitcoin-bin:
+

@@ -1,0 +1,14 @@
+services:
+  websocket:
+    image: peer-observer-tools
+    build:
+      context: ../
+      dockerfile: docker/peer-observer-tools.dockerfile
+    command:
+      ["/home/appuser/websocket", "--nats-address", "nats://nats:4222", "--websocket-address", "0.0.0.0:47482"]
+    ports:
+      - "47482:47482"
+    depends_on:
+      nats:
+        condition: service_healthy
+    profiles: [monitoring, websocket]
