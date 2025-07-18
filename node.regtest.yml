@@ -7,8 +7,3 @@ include:
   - path: docker-compose/connectivity-check.yml
   - path: docker-compose/metrics.yml
   - path: docker-compose/websocket.yml
-  
-volumes:
-  bitcoin-data:
-  bitcoin-bin:
-

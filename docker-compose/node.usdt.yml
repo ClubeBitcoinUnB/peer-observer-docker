@@ -23,3 +23,7 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+
+volumes:
+  bitcoin-data:
+  bitcoin-bin:
