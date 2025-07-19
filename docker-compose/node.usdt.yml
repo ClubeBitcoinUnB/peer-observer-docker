@@ -25,3 +25,8 @@ services:
 
 volumes:
   bitcoin-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ../.bitcoin
+      o: bind
