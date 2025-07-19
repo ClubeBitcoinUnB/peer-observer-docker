@@ -3,6 +3,8 @@ FROM ubuntu:22.04 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 ARG BTC_CORE_TAG=v29.0
+ARG PEER_EXTRACTOR_REPO=https://github.com/0xB10C/peer-observer.git
+ARG PEER_EXTRACTOR_BRANCH=master
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -36,7 +38,7 @@ RUN rustup default stable
 RUN rustup component add rustfmt
 
 # Copy the local repository to the container
-RUN git clone https://github.com/0xB10C/peer-observer.git /peer-observer
+RUN git clone -b $PEER_EXTRACTOR_BRANCH --single-branch $PEER_EXTRACTOR_REPO /peer-observer
 
 # Set working directory to the repository
 WORKDIR /peer-observer
