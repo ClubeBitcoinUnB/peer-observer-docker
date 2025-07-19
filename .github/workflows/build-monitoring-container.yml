@@ -19,5 +19,16 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker Compose
-        run: docker compose --profile monitoring build
+      - name: Build and Start Docker Compose
+        run: |
+          docker compose --profile monitoring build
+          docker compose --profile monitoring up -d
+
+      - name: Wait for bitcoin-node to be healthy
+        run: |
+          chmod +x docker/wait-for-bitcoin-healthy.sh
+          docker/wait-for-bitcoin-healthy.sh
+
+      - name: Stop Docker Compose
+        run: |
+          docker compose down -v
