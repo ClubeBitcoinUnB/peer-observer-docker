@@ -1,10 +1,8 @@
-### Build stage ###
-FROM ubuntu:22.04 AS builder
+### Build stage (btc core) ###
+FROM ubuntu:22.04 AS btc-core-builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 ARG BTC_CORE_TAG=v29.0
-ARG PEER_EXTRACTOR_REPO=https://github.com/0xB10C/peer-observer.git
-ARG PEER_EXTRACTOR_BRANCH=master
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -25,10 +23,18 @@ RUN git clone --branch $BTC_CORE_TAG --depth=1 https://github.com/bitcoin/bitcoi
 RUN cmake -B build -DBUILD_GUI=OFF -DWITH_USDT=ON -DCMAKE_BUILD_TYPE=Debug && \
     cmake --build build -j$(nproc)
 
+
+### Build stage (peer-observer) ###
+FROM ubuntu:22.04 AS peer-observer-builder
+
+ARG PEER_EXTRACTOR_REPO=https://github.com/0xB10C/peer-observer.git
+ARG PEER_EXTRACTOR_BRANCH=master
+
 # Install peer-extractor dependencies
 RUN apt-get update && apt-get install -y \
     sudo git curl protobuf-compiler \
     clang elfutils libbpf-dev \
+    cmake pkgconf \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust
@@ -37,7 +43,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN rustup default stable
 RUN rustup component add rustfmt
 
-# Copy the local repository to the container
+# Copy repository to the container
 RUN git clone -b $PEER_EXTRACTOR_BRANCH --single-branch $PEER_EXTRACTOR_REPO /peer-observer
 
 # Set working directory to the repository
@@ -80,10 +86,10 @@ RUN useradd -m -s /bin/bash bitcoin \
     && chown -R bitcoin:bitcoin /home/bitcoin /shared
 
 # Copy everything we need from builder
-COPY --from=builder /peer-observer/scripts/bitcoin-node-entrypoint.sh /peer-observer/scripts/bitcoin-node-entrypoint.sh
-COPY --from=builder /peer-observer/scripts/bitcoin-node-healthcheck.sh /peer-observer/scripts/bitcoin-node-healthcheck.sh
-COPY --from=builder /bitcoin/build/bin/ /shared/
-COPY --from=builder /peer-observer/target/release/ebpf-extractor /usr/local/bin/ebpf-extractor
+COPY --from=peer-observer-builder /peer-observer/scripts/bitcoin-node-entrypoint.sh /peer-observer/scripts/bitcoin-node-entrypoint.sh
+COPY --from=peer-observer-builder /peer-observer/scripts/bitcoin-node-healthcheck.sh /peer-observer/scripts/bitcoin-node-healthcheck.sh
+COPY --from=peer-observer-builder /peer-observer/target/release/ebpf-extractor /usr/local/bin/ebpf-extractor
+COPY --from=btc-core-builder /bitcoin/build/bin/ /shared/
 
 # Expose Bitcoin ports (RPC: 8332, P2P: 8333)
 EXPOSE 8332 8333

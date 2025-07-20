@@ -1,5 +1,8 @@
 FROM rust:1.87.0-slim-bookworm AS builder
 
+ARG PEER_EXTRACTOR_REPO=https://github.com/0xB10C/peer-observer.git
+ARG PEER_EXTRACTOR_BRANCH=master
+
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -9,8 +12,8 @@ RUN apt-get update && apt-get install -y \
 # Create a non-root user and configure sudo
 RUN useradd -m -s /bin/bash appuser
 
-# Copy the local repository to the container
-RUN git clone https://github.com/0xB10C/peer-observer.git
+# Copy repository to the container
+RUN git clone -b $PEER_EXTRACTOR_BRANCH --single-branch $PEER_EXTRACTOR_REPO /peer-observer
 RUN chown -R appuser:appuser /peer-observer
 USER appuser
 
