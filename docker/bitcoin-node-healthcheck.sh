@@ -6,7 +6,7 @@ case "$BITCOIN_NETWORK" in
   mainnet) NETWORK="" ;;
   signet)  NETWORK="-signet" ;;
   testnet) NETWORK="-testnet" ;;
-  regtest|"") NETWORK="-regtest" ;; regtest is the default
+  regtest|"") NETWORK="-regtest" ;; # regtest is the default
   *)
     echo "Unknown BITCOIN_NETWORK: $BITCOIN_NETWORK"
     exit 1
