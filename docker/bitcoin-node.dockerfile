@@ -82,21 +82,22 @@ RUN apt-get update && apt-get install -y \
 # in user land, not as root.
 RUN useradd -m -s /bin/bash bitcoin \
     && mkdir -p /home/bitcoin/.bitcoin \
-    && mkdir -p /shared \
-    && chown -R bitcoin:bitcoin /home/bitcoin /shared
+    && chown -R bitcoin:bitcoin /home/bitcoin
+
+# Set bitcoin binary path environment variable
+ENV BTC_BIN_PATH=/bitcoin/build/bin
 
 # Copy everything we need from builder
+COPY --from=btc-core-builder $BTC_BIN_PATH $BTC_BIN_PATH
 COPY --from=peer-observer-builder /peer-observer/scripts/bitcoin-node-entrypoint.sh /peer-observer/scripts/bitcoin-node-entrypoint.sh
 COPY --from=peer-observer-builder /peer-observer/scripts/bitcoin-node-healthcheck.sh /peer-observer/scripts/bitcoin-node-healthcheck.sh
 COPY --from=peer-observer-builder /peer-observer/target/release/ebpf-extractor /usr/local/bin/ebpf-extractor
-COPY --from=btc-core-builder /bitcoin/build/bin/ /shared/
 
 # Expose Bitcoin ports (RPC: 8332, P2P: 8333)
 EXPOSE 8332 8333
 
-# Set data directory and shared volume
+# Set data directory volume
 VOLUME /home/bitcoin/.bitcoin
-VOLUME /shared
 
 # Spawn bitcoin daemon
 WORKDIR /peer-observer

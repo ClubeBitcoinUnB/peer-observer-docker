@@ -13,4 +13,4 @@ case "$BITCOIN_NETWORK" in
     ;;
 esac
 
-exec su - bitcoin -c "/shared/bitcoin-cli $NETWORK getblockchaininfo"
+exec su - bitcoin -c "$BTC_BIN_PATH/bitcoin-cli $NETWORK getblockchaininfo"

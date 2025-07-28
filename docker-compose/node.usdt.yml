@@ -12,7 +12,6 @@ services:
     privileged: true
     volumes:
       - bitcoin-data:/home/bitcoin/.bitcoin
-      - bitcoin-bin:/shared
       - /sys/kernel/debug:/sys/kernel/debug
     depends_on:
       nats:
@@ -23,3 +22,11 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+
+volumes:
+  bitcoin-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ../.bitcoin
+      o: bind
