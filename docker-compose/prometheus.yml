@@ -1,0 +1,12 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ../prometheus/prometheus-config.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    depends_on:
+      - metrics
+    profiles: [monitoring, metrics]
