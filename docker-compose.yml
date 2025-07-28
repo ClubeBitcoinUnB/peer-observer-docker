@@ -8,3 +8,4 @@ include:
   - path: docker-compose/websocket.yml
   - path: docker-compose/metrics.yml
   - path: docker-compose/prometheus.yml
+  - path: docker-compose/grafana.yml
