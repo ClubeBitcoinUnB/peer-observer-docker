@@ -5,3 +5,5 @@ scrape_configs:
   - job_name: 'peer-observer-metrics'
     static_configs:
       - targets: ['metrics:8001']
+        labels:
+          host: node1

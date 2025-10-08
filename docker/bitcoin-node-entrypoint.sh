@@ -47,4 +47,9 @@ fi
 
 echo "Starting ebpf-extractor"
 # Run ebpf-extractor as root (needs CAP_SYS_ADMIN for BPF)
-exec /usr/local/bin/ebpf-extractor --no-idle-exit --nats-address nats://nats:4222 --bitcoind-path $BTC_BIN_PATH/bitcoind
+exec /usr/local/bin/ebpf-extractor \
+    --no-idle-exit \
+    --nats-address nats://nats:4222 \
+    --bitcoind-path "$BTC_BIN_PATH/bitcoind" \
+    --bitcoind-pid "$BITCOIND_PID"
+
