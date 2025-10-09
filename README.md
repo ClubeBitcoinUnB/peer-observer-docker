@@ -82,9 +82,11 @@ You should now have three containers.
 |--------------------|------------|---------------------------|
 | Bitcoin Node       | 8332, 8333 | Bitcoin RPC and P2P ports |
 | NATS               | 4222       | Message broker            |
-| Metrics            | 8282       | Metrics HTTP endpoint     |
+| Metrics            | 8001       | Metrics HTTP endpoint     |
 | WebSocket          | 47482      | Real-time data WebSocket  |
 | Connectivity Check | 18282      | Connectivity metrics      |
+| Prometheus         | 9090       | Datasource for Grafana    |
+| Grafana            | 3000       | Data visualization        |
 
 ## Usage
 
@@ -99,9 +101,11 @@ docker compose logs -f bitcoin-node
 
 Once all services are running:
 
-- **Metrics**: `http://localhost:8282`
+- **Metrics**: `http://localhost:8001`
 - **Connectivity Metrics**: `http://localhost:18282`
 - **WebSocket Connection**: `ws://localhost:47482`
+- **Prometheus**: `http://localhost:9090`
+- **Grafana**: `http://localhost:3000`, username: `admin`, password: `admin`
 
 ### Stopping Services
 
