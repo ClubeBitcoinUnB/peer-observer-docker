@@ -4,6 +4,8 @@ services:
     build:
       context: ../
       dockerfile: docker/bitcoin-node.dockerfile
+      args:
+        EXTRACTOR_TYPE: ${EXTRACTOR_TYPE:-ebpf}
     cap_add:
       - SYS_ADMIN
       - SYS_PTRACE
