@@ -29,6 +29,7 @@ FROM ubuntu:22.04 AS peer-observer-builder
 
 ARG PEER_EXTRACTOR_REPO=https://github.com/0xB10C/peer-observer.git
 ARG PEER_EXTRACTOR_BRANCH=master
+ARG EXTRACTOR_TYPE=ebpf
 
 # Install peer-extractor dependencies
 RUN apt-get update && apt-get install -y \
@@ -57,14 +58,16 @@ RUN chmod +x scripts/bitcoin-node-entrypoint.sh
 COPY docker/bitcoin-node-healthcheck.sh scripts/bitcoin-node-healthcheck.sh
 RUN chmod +x scripts/bitcoin-node-healthcheck.sh
 
-# Build the project
-RUN bash -c ". scripts/set-bpf-environment.sh && cargo build --release"
+# Build only the specified extractor (faster build, smaller cache)
+# Valid values: ebpf, p2p, rpc
+RUN bash -c ". scripts/set-bpf-environment.sh && cargo build --release -p ${EXTRACTOR_TYPE}-extractor"
 
 
 ### Runtime stage ###
 FROM ubuntu:22.04 AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
+ARG EXTRACTOR_TYPE=ebpf
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
@@ -91,7 +94,10 @@ ENV BTC_BIN_PATH=/bitcoin/build/bin
 COPY --from=btc-core-builder $BTC_BIN_PATH $BTC_BIN_PATH
 COPY --from=peer-observer-builder /peer-observer/scripts/bitcoin-node-entrypoint.sh /peer-observer/scripts/bitcoin-node-entrypoint.sh
 COPY --from=peer-observer-builder /peer-observer/scripts/bitcoin-node-healthcheck.sh /peer-observer/scripts/bitcoin-node-healthcheck.sh
-COPY --from=peer-observer-builder /peer-observer/target/release/ebpf-extractor /usr/local/bin/ebpf-extractor
+COPY --from=peer-observer-builder /peer-observer/target/release/${EXTRACTOR_TYPE}-extractor /usr/local/bin/${EXTRACTOR_TYPE}-extractor
+
+# Set which extractor is being used (for scripts/debugging)
+ENV EXTRACTOR_TYPE=${EXTRACTOR_TYPE}
 
 # Expose Bitcoin ports (RPC: 8332, P2P: 8333)
 EXPOSE 8332 8333
