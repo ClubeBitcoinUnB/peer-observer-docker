@@ -33,6 +33,10 @@ echo "Launching Bitcoin node in $BITCOIN_NETWORK mode..."
 /usr/sbin/runuser -u bitcoin -- $BTC_BIN_PATH/bitcoind $NETWORK &
 BITCOIND_PID=$!
 
+# Determine the bitcoind PID file path
+BITCOIND_PID_FILE="/home/bitcoin/.bitcoin/$BITCOIN_NETWORK/bitcoind.pid"
+echo "Reading Bitcoind PID from: $BITCOIND_PID_FILE"
+
 # Now wait for the RPC
 for i in {1..30}; do
     /usr/sbin/runuser -u bitcoin -- $BTC_BIN_PATH/bitcoin-cli $NETWORK getblockchaininfo >/dev/null 2>&1 && break
@@ -51,4 +55,4 @@ exec /usr/local/bin/ebpf-extractor \
     --no-idle-exit \
     --nats-address nats://nats:4222 \
     --bitcoind-path "$BTC_BIN_PATH/bitcoind" \
-    --bitcoind-pid "$BITCOIND_PID"
+    --bitcoind-pid-file "$BITCOIND_PID_FILE"
