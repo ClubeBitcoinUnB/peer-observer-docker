@@ -46,19 +46,11 @@ case "$EXTRACTOR_TYPE" in
     # For eBPF: start bitcoind normally, then attach extractor
     echo "Launching Bitcoin node in $BITCOIN_NETWORK mode..."
     /usr/sbin/runuser -u bitcoin -- $BTC_BIN_PATH/bitcoind $NETWORK &
-    
-    # Wait a moment for bitcoind process to start
-    sleep 1
-    
-    # Get the actual bitcoind PID (not runuser's PID)
-    BITCOIND_PID=$(pgrep -f "bitcoind.*$NETWORK" | head -n1)
-    
-    if [ -z "$BITCOIND_PID" ]; then
-        echo "Error: Could not find bitcoind process." >&2
-        exit 1
-    fi
-    
-    echo "bitcoind started with PID: $BITCOIND_PID"
+    BITCOIND_PID=$!
+
+    # Determine the bitcoind PID file path
+    BITCOIND_PID_FILE="/home/bitcoin/.bitcoin/$BITCOIN_NETWORK/bitcoind.pid"
+    echo "Reading Bitcoind PID from: $BITCOIND_PID_FILE"
     
     # Wait for RPC to be ready
     for i in {1..30}; do
@@ -76,7 +68,7 @@ case "$EXTRACTOR_TYPE" in
       --no-idle-exit \
       --nats-address nats://nats:4222 \
       --bitcoind-path $BTC_BIN_PATH/bitcoind \
-      --bitcoind-pid $BITCOIND_PID
+      --bitcoind-pid-file $BITCOIND_PID_FILE
     ;;
     
   p2p)
@@ -101,19 +93,7 @@ case "$EXTRACTOR_TYPE" in
     # Start bitcoind with addnode pointing to the p2p-extractor
     /usr/sbin/runuser -u bitcoin -- $BTC_BIN_PATH/bitcoind $NETWORK \
       -addnode=127.0.0.1:$P2P_EXTRACTOR_PORT &
-    
-    # Wait a moment for bitcoind process to start
-    sleep 1
-    
-    # Get the actual bitcoind PID (not runuser's PID)
-    BITCOIND_PID=$(pgrep -f "bitcoind.*$NETWORK" | head -n1)
-    
-    if [ -z "$BITCOIND_PID" ]; then
-        echo "Error: Could not find bitcoind process." >&2
-        exit 1
-    fi
-    
-    echo "bitcoind started with PID: $BITCOIND_PID"
+    BITCOIND_PID=$!
     
     # Wait for RPC to be ready
     for i in {1..30}; do
@@ -135,19 +115,7 @@ case "$EXTRACTOR_TYPE" in
     # For RPC: start bitcoind normally, then start rpc-extractor
     echo "Launching Bitcoin node in $BITCOIN_NETWORK mode..."
     /usr/sbin/runuser -u bitcoin -- $BTC_BIN_PATH/bitcoind $NETWORK &
-    
-    # Wait a moment for bitcoind process to start
-    sleep 1
-    
-    # Get the actual bitcoind PID (not runuser's PID)
-    BITCOIND_PID=$(pgrep -f "bitcoind.*$NETWORK" | head -n1)
-    
-    if [ -z "$BITCOIND_PID" ]; then
-        echo "Error: Could not find bitcoind process." >&2
-        exit 1
-    fi
-    
-    echo "bitcoind started with PID: $BITCOIND_PID"
+    BITCOIND_PID=$!
     
     # Wait for RPC to be ready
     for i in {1..30}; do
