@@ -154,6 +154,80 @@ Some services include health checks:
 - **NATS**: Verifies the message broker is healthy
 - Other services depend on NATS being healthy before starting
 
+## Using External Bitcoin Node
+
+If you're already running Bitcoin Core and ebpf-extractor (either locally or on another machine), you can run just the monitoring services:
+
+```bash
+docker compose -f monitoring-only.yml --profile monitoring up -d
+```
+
+### Local Setup (Same Machine)
+
+When running the monitoring stack on the **same machine** as your Bitcoin node:
+
+1. **Start the monitoring services**:
+   ```bash
+   docker compose -f monitoring-only.yml --profile monitoring up -d
+   ```
+
+2. **Configure ebpf-extractor** to connect to localhost:
+   ```bash
+   ./ebpf-extractor --nats-address nats://localhost:4222 --bitcoind-path /path/to/bitcoind
+   ```
+
+### Remote Setup (Different Machines)
+
+When running the monitoring stack on a **different machine** than your Bitcoin node:
+
+1. **On the monitoring server**, start the services:
+   ```bash
+   docker compose -f monitoring-only.yml --profile monitoring up -d
+   ```
+
+2. **On your Bitcoin node machine**, configure ebpf-extractor to connect remotely:
+   ```bash
+   # Replace MONITORING_SERVER_IP with your monitoring server's IP address
+   ./ebpf-extractor --nats-address nats://MONITORING_SERVER_IP:4222 --bitcoind-path /path/to/bitcoind
+   ```
+
+### Managing Individual Services
+
+Start specific monitoring tools as needed:
+```bash
+# Start all monitoring tools
+docker compose -f monitoring-only.yml --profile monitoring up -d
+
+# Or start individual tools
+docker compose -f monitoring-only.yml --profile logger up -d
+docker compose -f monitoring-only.yml --profile metrics up -d
+docker compose -f monitoring-only.yml --profile websocket up -d
+docker compose -f monitoring-only.yml --profile connectivity-check up -d
+```
+
+### Verify Setup
+
+1. **Check NATS connectivity**:
+   ```bash
+   docker compose -f monitoring-only.yml logs nats
+   ```
+
+2. **Verify ebpf-extractor is publishing events**:
+   ```bash
+   docker compose -f monitoring-only.yml logs logger
+   ```
+
+### Requirements
+- Bitcoin Core must be compiled with USDT support (`-DWITH_USDT=ON`)
+- ebpf-extractor must run on the same host as bitcoind
+- For remote setups: Network connectivity between machines on port 4222
+
+### Security Considerations for Remote Setup
+- Use firewall rules to restrict NATS access to your Bitcoin node's IP
+- Consider VPN or SSH tunneling between machines
+- For production: Enable NATS authentication and TLS
+- Monitor logs for unauthorized connection attempts
+
 ## Troubleshooting
 
 ### Common Issues
@@ -161,6 +235,7 @@ Some services include health checks:
 1. **Out of disk space**: Ensure you have sufficient disk space for Bitcoin blockchain data
 2. **Memory issues**: Increase Docker's memory limit if containers are being killed
 3. **Port conflicts**: Ensure the required ports are not in use by other applications
+4. **External connection issues**: Verify firewall rules allow connection to NATS port 4222
 
 ### Logs
 
