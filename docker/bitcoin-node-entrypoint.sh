@@ -46,7 +46,19 @@ case "$EXTRACTOR_TYPE" in
     # For eBPF: start bitcoind normally, then attach extractor
     echo "Launching Bitcoin node in $BITCOIN_NETWORK mode..."
     /usr/sbin/runuser -u bitcoin -- $BTC_BIN_PATH/bitcoind $NETWORK &
-    BITCOIND_PID=$!
+    
+    # Wait a moment for bitcoind process to start
+    sleep 1
+    
+    # Get the actual bitcoind PID (not runuser's PID)
+    BITCOIND_PID=$(pgrep -f "bitcoind.*$NETWORK" | head -n1)
+    
+    if [ -z "$BITCOIND_PID" ]; then
+        echo "Error: Could not find bitcoind process." >&2
+        exit 1
+    fi
+    
+    echo "bitcoind started with PID: $BITCOIND_PID"
     
     # Wait for RPC to be ready
     for i in {1..30}; do
@@ -89,7 +101,19 @@ case "$EXTRACTOR_TYPE" in
     # Start bitcoind with addnode pointing to the p2p-extractor
     /usr/sbin/runuser -u bitcoin -- $BTC_BIN_PATH/bitcoind $NETWORK \
       -addnode=127.0.0.1:$P2P_EXTRACTOR_PORT &
-    BITCOIND_PID=$!
+    
+    # Wait a moment for bitcoind process to start
+    sleep 1
+    
+    # Get the actual bitcoind PID (not runuser's PID)
+    BITCOIND_PID=$(pgrep -f "bitcoind.*$NETWORK" | head -n1)
+    
+    if [ -z "$BITCOIND_PID" ]; then
+        echo "Error: Could not find bitcoind process." >&2
+        exit 1
+    fi
+    
+    echo "bitcoind started with PID: $BITCOIND_PID"
     
     # Wait for RPC to be ready
     for i in {1..30}; do
