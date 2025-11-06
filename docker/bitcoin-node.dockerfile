@@ -29,6 +29,7 @@ FROM ubuntu:22.04 AS peer-observer-builder
 
 ARG PEER_EXTRACTOR_REPO=https://github.com/0xB10C/peer-observer.git
 ARG PEER_EXTRACTOR_BRANCH=master
+ARG PEER_EXTRACTOR_COMMIT=4a49347dcc764daabd047c01274afc6c5399bee6
 
 # Install peer-extractor dependencies
 RUN apt-get update && apt-get install -y \
@@ -46,8 +47,9 @@ RUN rustup component add rustfmt
 # Copy repository to the container
 RUN git clone -b $PEER_EXTRACTOR_BRANCH --single-branch $PEER_EXTRACTOR_REPO /peer-observer
 
-# Set working directory to the repository
+# Set working directory to the repository and checkout to pinned commit
 WORKDIR /peer-observer
+RUN git checkout $PEER_EXTRACTOR_COMMIT
 
 # Copy scripts
 COPY docker/set-bpf-environment.sh scripts/set-bpf-environment.sh
