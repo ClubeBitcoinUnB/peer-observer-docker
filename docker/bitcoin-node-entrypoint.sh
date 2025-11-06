@@ -130,6 +130,84 @@ case "$EXTRACTOR_TYPE" in
     # Keep both processes running
     wait $EXTRACTOR_PID
     ;;
+
+  rpc)
+    # For RPC: start bitcoind normally, then start rpc-extractor
+    echo "Launching Bitcoin node in $BITCOIN_NETWORK mode..."
+    /usr/sbin/runuser -u bitcoin -- $BTC_BIN_PATH/bitcoind $NETWORK &
+    
+    # Wait a moment for bitcoind process to start
+    sleep 1
+    
+    # Get the actual bitcoind PID (not runuser's PID)
+    BITCOIND_PID=$(pgrep -f "bitcoind.*$NETWORK" | head -n1)
+    
+    if [ -z "$BITCOIND_PID" ]; then
+        echo "Error: Could not find bitcoind process." >&2
+        exit 1
+    fi
+    
+    echo "bitcoind started with PID: $BITCOIND_PID"
+    
+    # Wait for RPC to be ready
+    for i in {1..30}; do
+        /usr/sbin/runuser -u bitcoin -- $BTC_BIN_PATH/bitcoin-cli $NETWORK getblockchaininfo >/dev/null 2>&1 && break
+        sleep 1
+    done
+    
+    if ! /usr/sbin/runuser -u bitcoin -- $BTC_BIN_PATH/bitcoin-cli $NETWORK getblockchaininfo >/dev/null 2>&1; then
+        echo "Error: bitcoind did not start in time." >&2
+        exit 1
+    fi
+    
+    # Set default query interval (in seconds)
+    RPC_QUERY_INTERVAL=${RPC_QUERY_INTERVAL:-20}
+    
+    # RPC credentials - use cookie file by default, or user/password if provided
+    RPC_AUTH_ARGS=""
+    if [ -n "$RPC_USER" ] && [ -n "$RPC_PASSWORD" ]; then
+        echo "Starting rpc-extractor with user/password authentication..."
+        RPC_AUTH_ARGS="--rpc-user $RPC_USER --rpc-password $RPC_PASSWORD"
+    else
+        echo "Starting rpc-extractor with cookie file authentication..."
+        RPC_COOKIE_FILE=${RPC_COOKIE_FILE:-/home/bitcoin/.bitcoin${NETWORK}/.cookie}
+        
+        # Verify cookie file exists (it should be auto-created by bitcoind)
+        if [ ! -f "$RPC_COOKIE_FILE" ]; then
+            echo "Warning: Cookie file not found at $RPC_COOKIE_FILE" >&2
+            echo "Waiting for bitcoind to create it..." >&2
+            for i in {1..10}; do
+                [ -f "$RPC_COOKIE_FILE" ] && break
+                sleep 1
+            done
+            if [ ! -f "$RPC_COOKIE_FILE" ]; then
+                echo "Error: Cookie file was not created. Check if bitcoind RPC is enabled." >&2
+                exit 1
+            fi
+        fi
+        
+        echo "Using cookie file: $RPC_COOKIE_FILE"
+        RPC_AUTH_ARGS="--rpc-cookie-file $RPC_COOKIE_FILE"
+    fi
+    
+    echo "Starting rpc-extractor (query interval: ${RPC_QUERY_INTERVAL}s)..."
+    /usr/local/bin/rpc-extractor \
+      --nats-address nats://nats:4222 \
+      --query-interval $RPC_QUERY_INTERVAL \
+      $RPC_AUTH_ARGS &
+    EXTRACTOR_PID=$!
+    
+    # Check if extractor is still running
+    sleep 1
+    if ! kill -0 "$EXTRACTOR_PID" 2>/dev/null; then
+        echo "Error: rpc-extractor failed to start." >&2
+        exit 1
+    fi
+    
+    echo "rpc-extractor started successfully"
+    # Keep both processes running
+    wait $EXTRACTOR_PID
+    ;;
     
   *)
     echo "Unknown EXTRACTOR_TYPE: $EXTRACTOR_TYPE" >&2
