@@ -1,0 +1,16 @@
+services:
+  grafana:
+    build:
+      context: ..
+      dockerfile: docker/grafana.dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    profiles: [monitoring, metrics]
+
+volumes:
+  grafana-data:

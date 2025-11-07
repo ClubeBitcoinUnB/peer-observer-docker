@@ -5,6 +5,7 @@ services:
       dockerfile: docker/nats.dockerfile
     ports:
       - "4222:4222"
+      - "8222:8222"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8222/healthz"]
       interval: 1m
