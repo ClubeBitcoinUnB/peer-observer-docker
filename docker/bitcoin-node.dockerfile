@@ -47,8 +47,9 @@ RUN rustup component add rustfmt
 # Copy repository to the container
 RUN git clone -b $PEER_EXTRACTOR_BRANCH --single-branch $PEER_EXTRACTOR_REPO /peer-observer
 
-# Set working directory to the repository
+# Set working directory to the repository and checkout to pinned commit
 WORKDIR /peer-observer
+RUN git checkout $PEER_EXTRACTOR_COMMIT
 
 # Copy scripts
 COPY docker/set-bpf-environment.sh scripts/set-bpf-environment.sh
