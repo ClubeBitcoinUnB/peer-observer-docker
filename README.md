@@ -13,10 +13,13 @@ This project contains Docker configurations and orchestration files for running 
 The base system consists of:
 
 - **Bitcoin Node**: A full Bitcoin Core node instrumented for monitoring.
-- **ebpf-extractor**: An extractor tool that consumes ebpf kernel events and routes messages to the NATS server.
+- **Extractor**: Tool that extracts Bitcoin network events and routes messages to the NATS server. Three types are available:
+  - **ebpf-extractor** (default): Uses eBPF kernel events to monitor Bitcoin Core internals
+  - **p2p-extractor**: Acts as a Bitcoin P2P node to observe network messages
+  - **rpc-extractor**: Periodically queries Bitcoin Core RPC interfaces
 - **NATS**: Message broker for inter-service communication.
 
-The default network is regtest for test and development, it is provided by [docker-compose.yml](docker-compose.yml) and doesn't require command line arguments.
+The default network is regtest for test and development, it is provided by [docker-compose.yml](docker-compose.yml) and doesn't require command line arguments. The default extractor is **ebpf-extractor**.
 
 Other networks are provided by [node.mainnet.yml](node.mainnet.yml), [node.signet.yml](node.signet.yml), and  [node.regtest.yml](node.regtest.yml). You refer to one of them using the `-f` option, e.g., `docker compose -f node.mainnet.yml up`.
 
@@ -52,7 +55,7 @@ Each tool is configured as a service with the `monitoring` profile and a profile
    docker compose --profile monitoring build --no-cache
 ```
 
-3. **Start the base system in regtest**:
+3. **Start the base system in regtest** (with default eBPF extractor):
    ```bash
    docker compose up -d
    ```
@@ -62,7 +65,7 @@ Each tool is configured as a service with the `monitoring` profile and a profile
    docker compose ps
    ```
 
-You should see two containers running since the bitcoin node and the ebpf-extractor tool should run in the same container.
+You should see two containers running since the bitcoin node and the extractor tool run in the same container.
 
 5. **Start the logger tool**:
 ```bash
@@ -75,6 +78,86 @@ You should now have three containers.
    ```bash
    docker compose --profile logger logs -f   
    ```
+
+## Choosing an Extractor
+
+You can choose which extractor to use by setting the `EXTRACTOR_TYPE` environment variable:
+
+### eBPF Extractor (Default)
+
+Uses eBPF (extended Berkeley Packet Filter) to monitor Bitcoin Core at the kernel level. Provides the most detailed insights but requires privileged container access.
+
+```bash
+# Default - no need to specify
+docker compose up -d
+
+# Or explicitly
+EXTRACTOR_TYPE=ebpf docker compose up -d
+```
+
+**Requirements:**
+- Privileged container
+- `SYS_ADMIN` and `SYS_PTRACE` capabilities
+- Access to `/sys/kernel/debug`
+
+### P2P Extractor
+
+Acts as a Bitcoin P2P peer, intercepting and analyzing network messages between Bitcoin nodes.
+
+```bash
+EXTRACTOR_TYPE=p2p docker compose up -d
+```
+
+**Configuration Options:**
+- `P2P_EXTRACTOR_PORT`: Port for P2P connections (default: 8555)
+- `P2P_EXTRACTOR_HOST`: Host address to bind (default: 0.0.0.0)
+
+**Example with custom port:**
+```bash
+EXTRACTOR_TYPE=p2p P2P_EXTRACTOR_PORT=9000 docker compose up -d
+```
+
+### RPC Extractor
+
+Periodically queries Bitcoin Core's RPC interface and publishes the results as events.
+
+```bash
+EXTRACTOR_TYPE=rpc docker compose up -d
+```
+
+**Configuration Options:**
+- `RPC_QUERY_INTERVAL`: Time between queries in seconds (default: 20)
+- `RPC_USER`: RPC username (optional, uses cookie file by default)
+- `RPC_PASSWORD`: RPC password (optional, uses cookie file by default)
+
+**Example with custom interval:**
+```bash
+EXTRACTOR_TYPE=rpc RPC_QUERY_INTERVAL=30 docker compose up -d
+```
+
+**Example with authentication:**
+```bash
+EXTRACTOR_TYPE=rpc RPC_USER=peer-observer RPC_PASSWORD=hunter2 docker compose up -d
+```
+
+**Note:** If `RPC_USER` and `RPC_PASSWORD` are not provided, the extractor will automatically use Bitcoin Core's cookie file for authentication.
+
+### Using Environment Files
+
+For convenience, create a `.env` file in the project root:
+
+```bash
+# .env
+EXTRACTOR_TYPE=rpc
+RPC_QUERY_INTERVAL=30
+RPC_USER=peer-observer
+RPC_PASSWORD=hunter2
+```
+
+Then simply run:
+```bash
+docker compose up -d
+```
 
 ## Services and Ports
 

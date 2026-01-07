@@ -4,12 +4,20 @@ services:
     build:
       context: ../
       dockerfile: docker/bitcoin-node.dockerfile
+      args:
+        EXTRACTOR_TYPE: ${EXTRACTOR_TYPE:-ebpf}
     cap_add:
       - SYS_ADMIN
       - SYS_PTRACE
     security_opt:
       - apparmor:unconfined
     privileged: true
+    environment:
+      # RPC Extractor configuration (only used when EXTRACTOR_TYPE=rpc)
+      - RPC_QUERY_INTERVAL=${RPC_QUERY_INTERVAL:-20}
+      - RPC_USER=${RPC_USER:-}
+      - RPC_PASSWORD=${RPC_PASSWORD:-}
+      - RPC_COOKIE_FILE=${RPC_COOKIE_FILE:-}
     volumes:
       - bitcoin-data:/home/bitcoin/.bitcoin
       - /sys/kernel/debug:/sys/kernel/debug
