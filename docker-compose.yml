@@ -5,5 +5,7 @@ include:
     - docker-compose/node.override.regtest.yml
   - path: docker-compose/logger.yml
   - path: docker-compose/connectivity-check.yml
-  - path: docker-compose/metrics.yml
   - path: docker-compose/websocket.yml
+  - path: docker-compose/metrics.yml
+  - path: docker-compose/prometheus.yml
+  - path: docker-compose/grafana.yml
